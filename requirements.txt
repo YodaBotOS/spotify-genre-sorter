@@ -1,0 +1,8 @@
+numpy==1.21.5
+torch==1.11.0
+scikit-learn==1.0.2
+librosa==0.9.1
+pandas==1.4.1
+aiohttp==3.8.1
+fastapi==0.75.0
+uvicorn==0.17.6
