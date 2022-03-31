@@ -29,10 +29,10 @@ pip install -U -r requirements.txt
 ```
 3. Copy `config.example.py` to the root folder of the repository, named `config.py`.
 4. Insert all the values for the essential variables. This includes:
-    - SPOTIFY_PLAYLIST_ID
-    - SPOTIFY_CLIENT_ID
-    - SPOTIFY_CLIENT_SECRET
-    - SPOTIFY_REDIRECT_URI
+    - `SPOTIFY_PLAYLIST_ID`
+    - `SPOTIFY_CLIENT_ID`
+    - `SPOTIFY_CLIENT_SECRET`
+    - `SPOTIFY_REDIRECT_URI`
 5. Run the script.
 ```shell
 python3 main.py
