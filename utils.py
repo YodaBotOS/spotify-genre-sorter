@@ -206,6 +206,10 @@ async def check_new_tracks(client: spotify.Client, *, tracks_before: list[spotif
             #
             # await client.remove_playlist_tracks(playlist, to_be_removed)
 
+            for track in tracks:
+                if track in playlist_tracks:
+                    tracks.remove(track)
+
             to_be_removed = []
 
             for playlist_track in playlist_tracks:
@@ -220,10 +224,6 @@ async def check_new_tracks(client: spotify.Client, *, tracks_before: list[spotif
             # print("debug yes")
 
             await client.remove_playlist_tracks(playlist, to_be_removed)
-
-            for track in tracks:
-                if track in playlist_tracks:
-                    tracks.remove(track)
 
         # ----------------------------------------------------------------- #
 
