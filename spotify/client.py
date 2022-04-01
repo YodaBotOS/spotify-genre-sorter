@@ -273,7 +273,7 @@ class Client:
                 else:
                     uri.append(u)
 
-            print("uri:", uri)
+            # print("uri:", uri)
 
             json_body = {
                 'tracks': [{'uri': u} for u in uri]
