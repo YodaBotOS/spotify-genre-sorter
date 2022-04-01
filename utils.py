@@ -223,6 +223,8 @@ async def check_new_tracks(client: spotify.Client, *, tracks_before: list[spotif
 
         # ----------------------------------------------------------------- #
 
+        print(tracks_available['playlist-track'].items())
+
         for playlist, playlist_tracks in tracks_available['playlist-track'].items():
             for track in tracks:
                 if track in playlist_tracks:
