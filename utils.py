@@ -230,6 +230,9 @@ async def check_new_tracks(client: spotify.Client, *, tracks_before: list[spotif
             if track in tracks_before:
                 continue
 
+            if not track.preview_url or not isinstance(track.preview_url, str):
+                continue
+
             try:
                 genres = await run_genre_classification(track)
             except Exception as e:
