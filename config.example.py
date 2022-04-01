@@ -20,6 +20,7 @@ SPOTIFY_SCOPES = [
     'user-read-email',
 ]
 
+# make sure to add the redirect URI you passed into your client's valid Redirect URIs with the host/domain.
 SPOTIFY_REDIRECT_URI = '/callback'
 SPOTIFY_STATE = ''
 
