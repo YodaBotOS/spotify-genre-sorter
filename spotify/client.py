@@ -84,6 +84,10 @@ class Client:
 
         await self.http.close()
 
+    def _wait_for_renewing(self):
+        while self._is_renewing_token:
+            pass
+
     async def _renew_access_token(self):
         while True:
             if not self.expires_in:
@@ -124,6 +128,8 @@ class Client:
         return js
 
     async def get_user_info(self, **kwargs) -> CurrentUser:
+        self._wait_for_renewing()
+
         url = 'https://api.spotify.com/v1/me'
 
         if 'headers' in kwargs:
@@ -139,6 +145,8 @@ class Client:
 
     async def get_playlist_items(self, playlist_id, *, market='US', fields=None, limit=100, offset=0,
                                  additional_types=None, **kwargs) -> PlaylistItems:
+        self._wait_for_renewing()
+
         url = 'https://api.spotify.com/v1/playlists/%s/tracks' % playlist_id
 
         if 'headers' in kwargs:
@@ -170,6 +178,8 @@ class Client:
         return PlaylistItems(js)
 
     async def user_playlists(self, *, limit=50, offset=0, **kwargs) -> CurrentUserPlaylists:
+        self._wait_for_renewing()
+
         url = 'https://api.spotify.com/v1/me/playlists'
 
         if 'headers' in kwargs:
@@ -194,6 +204,8 @@ class Client:
         return CurrentUserPlaylists(js)
 
     async def create_playlist(self, name, *, user_id=None, description=None, public=False, **kwargs) -> CreatedPlaylist:
+        self._wait_for_renewing()
+
         if user_id is None:
             user = await self.get_user_info()
             user_id = user.id
@@ -225,6 +237,8 @@ class Client:
         return CreatedPlaylist(js)
 
     async def add_playlist_tracks(self, playlist_id, tracks_uri, *, position=None, **kwargs) -> list[AddItemToPlaylist]:
+        self._wait_for_renewing()
+
         url = 'https://api.spotify.com/v1/playlists/%s/tracks' % playlist_id
 
         if 'headers' in kwargs:
@@ -265,6 +279,8 @@ class Client:
         return returns
 
     async def remove_playlist_tracks(self, playlist_id, tracks_uri, **kwargs) -> list[AddItemToPlaylist]:
+        self._wait_for_renewing()
+
         url = 'https://api.spotify.com/v1/playlists/%s/tracks' % playlist_id
 
         if 'headers' in kwargs:

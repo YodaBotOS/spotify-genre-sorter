@@ -45,8 +45,8 @@ class SpotifyTrackHTTP:
             await self._session.close()
 
     async def request(self, method, url, **kwargs) -> dict:
-        while self._client._is_renewing_token:
-            pass
+        # while self._client._is_renewing_token:
+        #     pass
 
         if self._session is None:
             await self._generate_session()
