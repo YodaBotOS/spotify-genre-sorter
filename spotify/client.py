@@ -21,6 +21,11 @@ def _split(l, amount):
     return newl
 
 
+def _exception_catching_callback(task):
+    if task.exception():
+        task.print_stack()
+
+
 class Client:
     __slots__ = (
         'client_id',
@@ -34,6 +39,7 @@ class Client:
         'http',
         '_renew_task',
         '_is_closed',
+        '_is_renewing_token',
     )
 
     def __init__(self, client_id, client_secret, *, session=None, loop=None):
@@ -54,6 +60,8 @@ class Client:
         self._renew_task = None
 
         self._is_closed = False
+
+        self._is_renewing_token = False
 
     def is_closed(self) -> bool:
         return self._is_closed
@@ -82,6 +90,8 @@ class Client:
                 continue
 
             if datetime.datetime.utcnow() > self._requested_on + datetime.timedelta(seconds=self.expires_in):
+                self._is_renewing_token = True
+
                 js = await self.http.refresh_access_token(self.refresh_token)
 
                 self.access_token = js['access_token']
@@ -89,6 +99,8 @@ class Client:
 
                 if 'refresh_token' in js:
                     self.refresh_token = js['refresh_token']
+
+            self._is_renewing_token = False
 
             await asyncio.sleep(5)
 
@@ -107,6 +119,7 @@ class Client:
                 self._renew_task.cancel()
 
             self._renew_task = self.loop.create_task(self._renew_access_token())
+            self._renew_task.add_done_callback(_exception_catching_callback)
 
         return js
 

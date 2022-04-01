@@ -10,20 +10,20 @@ class SpotifyTrackHTTP:
     __slots__ = (
         '_session',
         '_loop',
-        '_spotify_track',
+        '_client',
         '_session_created_locally',
         '_lock',
         '_tries',
     )
 
-    def __init__(self, spotify_track):
-        self._spotify_track = spotify_track
+    def __init__(self, client):
+        self._client = client
 
         self._session_created_locally: bool = False
 
-        self._session: aiohttp.ClientSession = spotify_track.session
+        self._session: aiohttp.ClientSession = client.session
 
-        self._loop: asyncio.AbstractEventLoop = spotify_track.loop or asyncio.get_event_loop()
+        self._loop: asyncio.AbstractEventLoop = client.loop or asyncio.get_event_loop()
 
         #if self._session is None:
             #self._session: aiohttp.ClientSession = self._loop.run_until_complete(self._generate_session())
@@ -34,7 +34,7 @@ class SpotifyTrackHTTP:
 
     async def _generate_session(self) -> aiohttp.ClientSession:
         self._session = aiohttp.ClientSession(loop=self._loop)
-        self._spotify_track.session = self._session
+        self._client.session = self._session
 
         self._session_created_locally = True
 
@@ -45,6 +45,9 @@ class SpotifyTrackHTTP:
             await self._session.close()
 
     async def request(self, method, url, **kwargs) -> dict:
+        while self._client._is_renewing_token:
+            pass
+
         if self._session is None:
             await self._generate_session()
 
@@ -90,8 +93,8 @@ class SpotifyTrackHTTP:
             'grant_type': 'authorization_code',
             'code': code,
             'redirect_uri': redirect_uri,
-            'client_id': self._spotify_track.client_id,
-            'client_secret': self._spotify_track.client_secret
+            'client_id': self._client.client_id,
+            'client_secret': self._client.client_secret
         }
 
         headers = {
@@ -108,8 +111,8 @@ class SpotifyTrackHTTP:
         data = {
             'grant_type': 'refresh_token',
             'refresh_token': refresh_token,
-            'client_id': self._spotify_track.client_id,
-            'client_secret': self._spotify_track.client_secret
+            'client_id': self._client.client_id,
+            'client_secret': self._client.client_secret
         }
 
         headers = {
