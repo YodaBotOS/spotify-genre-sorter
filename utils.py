@@ -141,8 +141,8 @@ async def run_genre_classification(track: spotify.Track) -> dict[str, float]:
 
     genres = {}
 
-    print("stdout: ", stdout)
-    print("stderr: ", stderr)
+    # print("stdout: ", stdout)
+    # print("stderr: ", stderr)
 
     for line in output.split("\n"):
         if not line:
@@ -170,7 +170,7 @@ async def check_new_tracks(client: spotify.Client, *, tracks_before: list[spotif
     tracks_before = tracks_before or []
 
     while True:
-        print(1)
+        # print(1)
         offset = 0
 
         tracks = []
@@ -185,11 +185,11 @@ async def check_new_tracks(client: spotify.Client, *, tracks_before: list[spotif
 
             offset += response_tracks.limit
 
-        print(2)
+        # print(2)
 
         available_playlists, tracks_available = await get_available(client)
 
-        print(3)
+        # print(3)
 
         # if tracks_before:
         #     removed_tracks = handle_removed_tracks(tracks, tracks_before)
@@ -201,7 +201,7 @@ async def check_new_tracks(client: spotify.Client, *, tracks_before: list[spotif
             #     if track in removed_tracks:
             #         to_be_removed.append(track)
             #
-            # print(to_be_removed)
+            # # print(to_be_removed)
             #
             # await client.remove_playlist_tracks(playlist, to_be_removed)
 
@@ -211,18 +211,18 @@ async def check_new_tracks(client: spotify.Client, *, tracks_before: list[spotif
                 if playlist_track not in tracks:
                     to_be_removed.append(playlist_track)
 
-            print(playlist, to_be_removed)
+            # print(playlist, to_be_removed)
 
             if not to_be_removed:
                 continue
 
-            print("debug yes")
+            # print("debug yes")
 
             await client.remove_playlist_tracks(playlist, to_be_removed)
 
         # ----------------------------------------------------------------- #
 
-        print(4, tracks)
+        # print(4, tracks)
 
         genre_tracks = {}
 
@@ -235,7 +235,7 @@ async def check_new_tracks(client: spotify.Client, *, tracks_before: list[spotif
             except Exception as e:
                 raise e
 
-            print(5)
+            # print(5)
 
             for genre, confidence in genres.items():
                 if not genre or not confidence or genre.lower() in [x.lower() for x in config.GENRES_IGNORED]:
@@ -249,7 +249,7 @@ async def check_new_tracks(client: spotify.Client, *, tracks_before: list[spotif
                     'confidence': confidence,
                 })
 
-            print(6)
+            # print(6)
 
         for genre in genre_tracks:
             if genre not in available_playlists:
@@ -267,7 +267,7 @@ async def check_new_tracks(client: spotify.Client, *, tracks_before: list[spotif
                 playlist_created = True
                 playlist_id = available_playlists[genre]['id']
 
-            print(7)
+            # print(7)
 
             offset = 0
             tracks = []
@@ -283,13 +283,13 @@ async def check_new_tracks(client: spotify.Client, *, tracks_before: list[spotif
 
                     offset += response_tracks.limit
 
-            print(8)
+            # print(8)
 
-            print(tracks)
+            # print(tracks)
 
             tracks_to_add = [x['track'] for x in genre_tracks[genre] if x['track'] not in tracks]
 
-            print(tracks_to_add)
+            # print(tracks_to_add)
 
             if not tracks_to_add:
                 continue
@@ -305,18 +305,18 @@ async def check_new_tracks(client: spotify.Client, *, tracks_before: list[spotif
                 )
                 playlist_id = playlist.id
 
-            print(9)
+            # print(9)
 
             await client.add_playlist_tracks(playlist_id, tracks_to_add)
 
             print(f"[LOGS] Added tracks {tracks_to_add} to {playlist_id}")
 
-            print(10)
+            # print(10)
 
             await asyncio.sleep(1.5)
 
         tracks_before = tracks
 
-        print(11)
+        # print(11)
 
         await asyncio.sleep(5)
