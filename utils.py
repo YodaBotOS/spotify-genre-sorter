@@ -167,6 +167,7 @@ def handle_removed_tracks(tracks: list[spotify.Track], tracks_before: list[spoti
 
 
 async def check_new_tracks(client: spotify.Client, *, tracks_before: list[spotify.Track] = None):
+    # TODO: Either make the genre classification + playlist in a task or check for tracks in all the genre playlists, and filter out the tracks with the tracks in the config playlist to improve speed.
     tracks_before = tracks_before or []
 
     while True:
@@ -219,6 +220,10 @@ async def check_new_tracks(client: spotify.Client, *, tracks_before: list[spotif
             # print("debug yes")
 
             await client.remove_playlist_tracks(playlist, to_be_removed)
+
+            for track in tracks:
+                if track in playlist_tracks:
+                    tracks.remove(track)
 
         # ----------------------------------------------------------------- #
 
