@@ -92,7 +92,7 @@ class Client:
 
             await asyncio.sleep(5)
 
-    async def requesst_access_token(self, code, redirect_uri, *, renew=False) -> dict:
+    async def request_access_token(self, code, redirect_uri, *, renew=False) -> dict:
         js = await self.http.fetch_access_token(code, redirect_uri)
 
         self.access_token = js['access_token']
@@ -251,7 +251,7 @@ class Client:
 
         return returns
 
-    async def remove_playlist_tracks(self, playlist_id, tracks_uri, *, position=None, **kwargs) -> list[AddItemToPlaylist]:
+    async def remove_playlist_tracks(self, playlist_id, tracks_uri, **kwargs) -> list[AddItemToPlaylist]:
         url = 'https://api.spotify.com/v1/playlists/%s/tracks' % playlist_id
 
         if 'headers' in kwargs:
@@ -273,17 +273,16 @@ class Client:
                 else:
                     uri.append(u)
 
-            params = {
-                'uris': ','.join(uri),
+            print("uri:", uri)
+
+            json_body = {
+                'tracks': [{'uri': u} for u in uri]
             }
 
-            if position:
-                params['position'] = position
-
-            if 'params' in kwargs:
-                kwargs['params'].update(params)
+            if 'json' in kwargs:
+                kwargs['json'].update(json_body)
             else:
-                kwargs['params'] = params
+                kwargs['json'] = json_body
 
             js = await self.http.request('DELETE', url, **kwargs)
 

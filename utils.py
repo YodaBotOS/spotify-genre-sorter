@@ -24,10 +24,20 @@ def check_imports() -> tuple[bool, ImportError | None]:
         return True, None
 
 
+def remove_tmp():
+    current_file_path = os.path.dirname(os.path.abspath(__file__))
+    tmp_path = current_file_path + "/tmp/"
+
+    for file in os.listdir(tmp_path):
+        os.remove(tmp_path + file)
+
+    os.rmdir(tmp_path)
+
+
 async def get_available(client: spotify.Client) -> tuple[dict[str, dict], dict[str, dict[spotify.Track, list[int]]]]:
     tracks_available = {
         'playlist-track': {},
-        'track-playlist': {},
+        # 'track-playlist': [],
     }
 
     playlists = []
@@ -36,7 +46,7 @@ async def get_available(client: spotify.Client) -> tuple[dict[str, dict], dict[s
     user = await client.get_user_info()
 
     while True:
-        response = await client.user_playlists(limit=100, offset=offset)
+        response = await client.user_playlists(limit=50, offset=offset)
 
         if not response.items:
             break
@@ -46,7 +56,7 @@ async def get_available(client: spotify.Client) -> tuple[dict[str, dict], dict[s
         offset += response.limit
 
     _available_playlists = [x for x in playlists if x['owner']['id'] == user.id and x['name'] in [
-        config.GENRE_PLAYLIST_NAME.get(genre, config.GENRE_DEFAULT_PLAYLIST_NAME.format(genre)) for genre in
+        config.GENRE_PLAYLIST_NAME.get(genre, config.GENRE_DEFAULT_PLAYLIST_NAME.format(genre.title())) for genre in
         ['blues', 'classical', 'country', 'disco', 'hiphop', 'jazz', 'metal', 'pop', 'reggae', 'rock']
     ]]
 
@@ -54,13 +64,16 @@ async def get_available(client: spotify.Client) -> tuple[dict[str, dict], dict[s
 
     for i in _available_playlists:
         for genre in ['blues', 'classical', 'country', 'disco', 'hiphop', 'jazz', 'metal', 'pop', 'reggae', 'rock']:
-            if config.GENRE_PLAYLIST_NAME.get(genre, config.GENRE_DEFAULT_PLAYLIST_NAME.format(genre)) == i['name']:
+            if config.GENRE_PLAYLIST_NAME.get(genre, config.GENRE_DEFAULT_PLAYLIST_NAME.format(genre.title())) == i[
+                'name']:
                 available_playlists[genre] = i
 
-    for playlist_id in available_playlists:
+    for genre, playlist in available_playlists.items():
         offset = 0
 
         tracks = []
+
+        playlist_id = playlist['id']
 
         while True:
             response_tracks = await client.get_playlist_items(playlist_id, offset=offset, limit=100)
@@ -74,11 +87,23 @@ async def get_available(client: spotify.Client) -> tuple[dict[str, dict], dict[s
 
         tracks_available['playlist-track'][playlist_id] = tracks
 
-        for track in tracks:
-            if track in tracks_available['track-playlist']:
-                tracks_available['track-playlist'][track].append(playlist_id)
-            else:
-                tracks_available['track-playlist'][track] = [playlist_id]
+        added_playlist_ids = {}
+
+        # for track in tracks:
+        #     if {'track': track, 'playlist_ids': added_playlist_ids} in tracks_available['track-playlist']:
+        #         #tracks_available['track-playlist'][track].append(playlist_id)
+        #         tracks_available['track-playlist'][tracks_available['track-playlist'].index(
+        #             {'track': track, 'playlist_ids': added_playlist_ids})]['playlist_ids'].append(playlist_id)
+        #     else:
+        #         tracks_available['track-playlist'].append({
+        #             'track': track,
+        #             'playlist_ids': [playlist_id]
+        #         })
+        #
+        #     if track.id in added_playlist_ids:
+        #         added_playlist_ids[track.id].append(playlist_id)
+        #     else:
+        #         added_playlist_ids[track.id] = [playlist_id]
 
     return available_playlists, tracks_available
 
@@ -103,7 +128,7 @@ async def run_genre_classification(track: spotify.Track) -> dict[str, float]:
 
     process = subprocess.Popen(f"cd {os.path.dirname(os.path.abspath(__file__))}/music-genre-classification/src && "
                                f"python3 get_genre.py {track_path} && "
-                               f"cd {cwd}")
+                               f"cd {cwd}", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
 
     stdout, stderr = process.communicate()
 
@@ -116,9 +141,15 @@ async def run_genre_classification(track: spotify.Track) -> dict[str, float]:
 
     genres = {}
 
+    print("stdout: ", stdout)
+    print("stderr: ", stderr)
+
     for line in output.split("\n"):
-        for genre, confidence in line.split(":"):
-            genres[genre.strip()] = float(confidence.strip())
+        if not line:
+            continue
+
+        genre, confidence = line.split(":")
+        genres[genre.strip()] = float(confidence.strip())
 
     return genres
 
@@ -139,6 +170,7 @@ async def check_new_tracks(client: spotify.Client, *, tracks_before: list[spotif
     tracks_before = tracks_before or []
 
     while True:
+        print(1)
         offset = 0
 
         tracks = []
@@ -153,19 +185,44 @@ async def check_new_tracks(client: spotify.Client, *, tracks_before: list[spotif
 
             offset += response_tracks.limit
 
+        print(2)
+
         available_playlists, tracks_available = await get_available(client)
 
-        if tracks_before:
-            removed_tracks = handle_removed_tracks(tracks, tracks_before)
+        print(3)
 
-            for playlist in tracks_available['playlist-track']:
-                to_be_removed = []
+        # if tracks_before:
+        #     removed_tracks = handle_removed_tracks(tracks, tracks_before)
 
-                for track in tracks_available['playlist-track'][playlist]:
-                    if track in removed_tracks:
-                        to_be_removed.append(track)
+        for playlist, playlist_tracks in tracks_available['playlist-track'].items():
+            # to_be_removed = []
+            #
+            # for track in tracks_available['playlist-track'][playlist]:
+            #     if track in removed_tracks:
+            #         to_be_removed.append(track)
+            #
+            # print(to_be_removed)
+            #
+            # await client.remove_playlist_tracks(playlist, to_be_removed)
 
-                await client.remove_playlist_tracks(playlist, to_be_removed)
+            to_be_removed = []
+
+            for playlist_track in playlist_tracks:
+                if playlist_track not in tracks:
+                    to_be_removed.append(playlist_track)
+
+            print(playlist, to_be_removed)
+
+            if not to_be_removed:
+                continue
+
+            print("debug yes")
+
+            await client.remove_playlist_tracks(playlist, to_be_removed)
+
+        # ----------------------------------------------------------------- #
+
+        print(4, tracks)
 
         genre_tracks = {}
 
@@ -175,8 +232,10 @@ async def check_new_tracks(client: spotify.Client, *, tracks_before: list[spotif
 
             try:
                 genres = await run_genre_classification(track)
-            except:
-                continue
+            except Exception as e:
+                raise e
+
+            print(5)
 
             for genre, confidence in genres.items():
                 if not genre or not confidence or genre.lower() in [x.lower() for x in config.GENRES_IGNORED]:
@@ -190,42 +249,74 @@ async def check_new_tracks(client: spotify.Client, *, tracks_before: list[spotif
                     'confidence': confidence,
                 })
 
+            print(6)
+
         for genre in genre_tracks:
             if genre not in available_playlists:
-                playlist = await client.create_playlist(
-                    config.GENRE_PLAYLIST_NAME.get(genre, config.GENRE_DEFAULT_PLAYLIST_NAME.format(genre)),
-                    description=config.GENRE_PLAYLIST_DESCRIPTION.get(
-                        genre, config.GENRE_DEFAULT_PLAYLIST_DESCRIPTION.format(genre)
-                    ) or None,
-                    public=config.GENRE_PLAYLIST_PUBLIC.get(genre, config.GENRE_DEFAULT_PLAYLIST_PUBLIC),
-                )
-                playlist_id = playlist.id
+                playlist_created = False
+                # description = config.GENRE_DEFAULT_PLAYLIST_DESCRIPTION or ''
+                # playlist = await client.create_playlist(
+                #     config.GENRE_PLAYLIST_NAME.get(genre, config.GENRE_DEFAULT_PLAYLIST_NAME.format(genre.title())),
+                #     description=config.GENRE_PLAYLIST_DESCRIPTION.get(
+                #         genre, description.format(genre.title())
+                #     ) or None,
+                #     public=config.GENRE_PLAYLIST_PUBLIC.get(genre, config.GENRE_DEFAULT_PLAYLIST_PUBLIC),
+                # )
+                # playlist_id = playlist.id
             else:
+                playlist_created = True
                 playlist_id = available_playlists[genre]['id']
+
+            print(7)
 
             offset = 0
             tracks = []
 
-            while True:
-                response_tracks = await client.get_playlist_items(config.SPOTIFY_PLAYLIST_ID, offset=offset, limit=100)
+            if playlist_created is True:
+                while True:
+                    response_tracks = await client.get_playlist_items(playlist_id, offset=offset, limit=100)
 
-                if not response_tracks.items:
-                    break
+                    if not response_tracks.items:
+                        break
 
-                tracks += [x['track'] for x in response_tracks.items]
+                    tracks += [x['track'] for x in response_tracks.items]
 
-                offset += response_tracks.limit
+                    offset += response_tracks.limit
 
-            tracks_to_add = [x['track'] for x in genre_tracks[genre]]
+            print(8)
 
-            for i in tracks_to_add:
-                if i in tracks:
-                    tracks_to_add.remove(i)
+            print(tracks)
+
+            tracks_to_add = [x['track'] for x in genre_tracks[genre] if x['track'] not in tracks]
+
+            print(tracks_to_add)
+
+            if not tracks_to_add:
+                continue
+
+            if playlist_created is False:
+                description = config.GENRE_DEFAULT_PLAYLIST_DESCRIPTION or ''
+                playlist = await client.create_playlist(
+                    config.GENRE_PLAYLIST_NAME.get(genre, config.GENRE_DEFAULT_PLAYLIST_NAME.format(genre.title())),
+                    description=config.GENRE_PLAYLIST_DESCRIPTION.get(
+                        genre, description.format(genre.title())
+                    ) or None,
+                    public=config.GENRE_PLAYLIST_PUBLIC.get(genre, config.GENRE_DEFAULT_PLAYLIST_PUBLIC),
+                )
+                playlist_id = playlist.id
+
+            print(9)
 
             await client.add_playlist_tracks(playlist_id, tracks_to_add)
+
+            print(f"[LOGS] Added tracks {tracks_to_add} to {playlist_id}")
+
+            print(10)
 
             await asyncio.sleep(1.5)
 
         tracks_before = tracks
 
-        await asyncio.sleep(3)
+        print(11)
+
+        await asyncio.sleep(5)

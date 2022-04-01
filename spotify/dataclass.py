@@ -25,7 +25,16 @@ class Track(BaseDataClass):
         try:
             return isinstance(other, Track) and self.raw['id'] == other.raw['id']
         except KeyError:
-            return super().__eq__(other)
+            try:
+                return isinstance(other, Track) and self.id == other.id
+            except:
+                return super().__eq__(other)
+
+    def __repr__(self):
+        try:
+            return f"<Track id={self.id}>"
+        except:
+            return super().__repr__()
 
 
 class CurrentUser(BaseDataClass):
