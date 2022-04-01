@@ -229,6 +229,8 @@ async def check_new_tracks(client: spotify.Client, *, tracks_before: list[spotif
                     print("yes yess")
                     tracks.remove(track)
 
+        print("passed")
+
         # print(4, tracks)
 
         genre_tracks = {}
