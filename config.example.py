@@ -20,7 +20,7 @@ SPOTIFY_SCOPES = [
     'user-read-email',
 ]
 
-SPOTIFY_REDIRECT_URI = ''
+SPOTIFY_REDIRECT_URI = '/callback'
 SPOTIFY_STATE = ''
 
 # Webserver stuff

@@ -32,9 +32,11 @@ pip install -U -r requirements.txt
     - `SPOTIFY_PLAYLIST_ID`
     - `SPOTIFY_CLIENT_ID`
     - `SPOTIFY_CLIENT_SECRET`
-    - `SPOTIFY_REDIRECT_URI`
 5. Run the script.
 ```shell
 python3 main.py
 ```
 6. Follow the instructions in your terminal.
+
+# Downloading the default dataset:
+If you are searching for the dataset used here and you would like to download it, you can find it [here](https://cdn.openrobot.xyz/gtzan-genre-collection.zip)
