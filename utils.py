@@ -186,6 +186,8 @@ async def check_new_tracks(client: spotify.Client, *, tracks_before: list[spotif
 
             offset += response_tracks.limit
 
+        original_tracks = tracks.copy()
+
         # print(2)
 
         available_playlists, tracks_available = await get_available(client)
@@ -329,7 +331,7 @@ async def check_new_tracks(client: spotify.Client, *, tracks_before: list[spotif
 
             await asyncio.sleep(1.5)
 
-        tracks_before = tracks
+        tracks_before = original_tracks
 
         # print(11)
 
