@@ -14,7 +14,7 @@ This is taken from [GitHub (@cetinsamet/music-genre-classification)](https://git
 All credits go to him for making this amazing repo possible.
 
 # A live demo:
-A live demo of this project is available [here](https://playlist.openrobot.xyz/grouped). The original version of that playlist is [proguy's playlist](https://playlist.openrobot.xyz/all).
+A live demo of this project is available [here](https://playlist.proguy914629.link/grouped). The original version of that playlist is [proguy's playlist](https://playlist.proguy914629.link/all).
 
 # Setup:
 The below steps assumed you already have fulfilled the following requirements:
