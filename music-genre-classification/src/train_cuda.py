@@ -10,7 +10,7 @@ from set import Set
 
 import warnings
 
-warnings.simplefilter(action="ignore", category=FutureWarning) # Ignore FutureWarning's caused by librosa.
+warnings.simplefilter(action="ignore", category=FutureWarning)  # Ignore FutureWarning's caused by librosa.
 
 
 def main():
