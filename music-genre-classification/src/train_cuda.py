@@ -1,4 +1,8 @@
+import os
+
 import torch
+
+import sys
 
 torch.manual_seed(123)
 from torch.autograd import Variable
@@ -10,25 +14,42 @@ from set import Set
 
 import warnings
 
+from config import RAW_DATAPATH, SET_DATAPATH
+
 warnings.simplefilter(action="ignore", category=FutureWarning)  # Ignore FutureWarning's caused by librosa.
 
 
 def main():
     # ------------------------------------------------------------------------------------------- #
     ## DATA
-    data = Data(GENRES, DATAPATH)
-    data.make_raw_data()
-    data.save()
-    data = Data(GENRES, DATAPATH)
-    data.load()
+    if '--reload-data' in sys.argv:
+        data = Data(GENRES, DATAPATH)
+        data.make_raw_data()
+        data.save()
+    else:
+        if os.path.exists(RAW_DATAPATH):
+            data = Data(GENRES, DATAPATH)
+            data.load()
+        else:
+            data = Data(GENRES, DATAPATH)
+            data.make_raw_data()
+            data.save()
+
     # ------------------------------------------------------------------------------------------- #
     # ------------------------------------------------------------------------------------------- #
     ## SET
-    set_ = Set(data)
-    set_.make_dataset()
-    set_.save()
-    set_ = Set(data)
-    set_.load()
+    if '--reload-set' in sys.argv:
+        set_ = Set(data)
+        set_.make_dataset()
+        set_.save()
+    else:
+        if os.path.exists(SET_DATAPATH):
+            set_ = Set(data)
+            set_.load()
+        else:
+            set_ = Set(data)
+            set_.make_dataset()
+            set_.save()
 
     x_train, y_train = set_.get_train_set()
     x_valid, y_valid = set_.get_valid_set()
