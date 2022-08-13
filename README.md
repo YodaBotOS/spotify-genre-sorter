@@ -13,6 +13,11 @@ This is taken from [GitHub (@cetinsamet/music-genre-classification)](https://git
 
 All credits go to him for making this amazing repo possible.
 
+# Deploying Serverless (AWS Lambda):
+You can use [@proguy914629bot/smg-serverless-lambda](https://github.com/proguy914629bot/smg-serverless-lambda). This repo is optimized specifically for serverless genre classification.
+
+*Note: The Spotify Computing is still hosted locally, but the AI (PyTorch) to classify genres is hosted on the AWS Lambda Function.
+
 # A live demo:
 A live demo of this project is available [here](https://playlist.proguy914629.link/grouped). The original version of that playlist is [proguy's playlist](https://playlist.proguy914629.link/all).
 
