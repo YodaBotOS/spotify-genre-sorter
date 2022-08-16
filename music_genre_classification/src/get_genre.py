@@ -9,9 +9,9 @@ from librosa.core import load
 from librosa.feature import melspectrogram
 from librosa import power_to_db
 
-from model import genreNet
-from config import MODELPATH
-from config import GENRES
+from .model import genreNet
+from .config import MODELPATH
+from .config import GENRES
 
 import warnings
 
