@@ -4,6 +4,8 @@ import json
 import asyncio
 import subprocess
 
+sys.path.extend(["music_genre_classification/", "music_genre_classification/src/"])
+
 import config
 import spotify
 from utils import *
