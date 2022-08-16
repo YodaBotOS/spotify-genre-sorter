@@ -65,5 +65,5 @@ def main(argv, *, verbose=False):
     return dict(pos_genre)
 
 
-if __name__ == '__main__':
-    main(sys.argv[1:])
+# if __name__ == '__main__':
+#     main(sys.argv[1:])
