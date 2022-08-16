@@ -18,7 +18,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
-def main(argv):
+def main(argv, *, verbose=False):
     if len(argv) != 1:
         print("Usage: python3 get_genre.py audiopath")
         exit()
@@ -57,9 +57,12 @@ def main(argv):
     # ------------------------------- #
     s = float(sum([v for k, v in dict(Counter(genres)).items()]))
     pos_genre = sorted([(k, v / s * 100) for k, v in dict(Counter(genres)).items()], key=lambda x: x[1], reverse=True)
-    for genre, pos in pos_genre:
-        print(f"{genre}:{pos:.2f}")
-    return
+
+    if verbose:
+        for genre, pos in pos_genre:
+            print(f"{genre}:{pos:.2f}")
+
+    return dict(pos_genre)
 
 
 if __name__ == '__main__':

@@ -1,4 +1,5 @@
 import os
+import warnings
 import asyncio
 import subprocess
 
@@ -6,6 +7,11 @@ import aiohttp
 
 import config
 import spotify
+
+from music_genre_classification.src.get_genre import main as get_genre
+
+
+warnings.filterwarnings("ignore")
 
 
 def check_imports() -> tuple[bool, ImportError | None]:
@@ -123,33 +129,35 @@ async def run_genre_classification(track: spotify.Track) -> dict[str, float]:
             with open(track_path, "wb") as fp:
                 fp.write(await resp.read())
 
+    genres = get_genre(track_path)
+
     # "cd " + os.path.dirname(os.path.abspath(__file__)) + "music-genre-classification/src" + f" && python3
     # get_genre.py {track_path}"
 
-    process = subprocess.Popen(f"cd {os.path.dirname(os.path.abspath(__file__))}/music-genre-classification/src && "
-                               f"python3 get_genre.py {track_path} && "
-                               f"cd {cwd}", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-
-    stdout, stderr = process.communicate()
-
-    os.remove(track_path)
-
-    stdout = stdout.decode('utf-8')
-    stderr = stderr.decode('utf-8')
-
-    output = stdout + stderr
-
-    genres = {}
-
-    # print("stdout: ", stdout)
-    # print("stderr: ", stderr)
-
-    for line in output.split("\n"):
-        if not line:
-            continue
-
-        genre, confidence = line.split(":")
-        genres[genre.strip()] = float(confidence.strip())
+    # process = subprocess.Popen(f"cd {os.path.dirname(os.path.abspath(__file__))}/music-genre-classification/src && "
+    #                            f"python3 get_genre.py {track_path} && "
+    #                            f"cd {cwd}", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+    #
+    # stdout, stderr = process.communicate()
+    #
+    # os.remove(track_path)
+    #
+    # stdout = stdout.decode('utf-8')
+    # stderr = stderr.decode('utf-8')
+    #
+    # output = stdout + stderr
+    #
+    # genres = {}
+    #
+    # # print("stdout: ", stdout)
+    # # print("stderr: ", stderr)
+    #
+    # for line in output.split("\n"):
+    #     if not line:
+    #         continue
+    #
+    #     genre, confidence = line.split(":")
+    #     genres[genre.strip()] = float(confidence.strip())
 
     return genres
 
@@ -221,6 +229,8 @@ async def check_new_tracks(client: spotify.Client, *, tracks_before: list[spotif
 
             # print("debug yes")
 
+            newline = '\n'
+            print(f"[LOGS] Removing tracks from {playlist} playlist: {f'{newline}'.join([track.name for track in to_be_removed])}")
             await client.remove_playlist_tracks(playlist, to_be_removed)
 
         # ----------------------------------------------------------------- #
@@ -265,71 +275,113 @@ async def check_new_tracks(client: spotify.Client, *, tracks_before: list[spotif
                     'confidence': confidence,
                 })
 
+                if genre not in await get_available(client)[0]:
+                    playlist_created = False
+                else:
+                    playlist_created = True
+                    playlist_id = available_playlists[genre]['id']
+
+                offset = 0
+                tracks = []
+
+                if playlist_created is True:
+                    while True:
+                        response_tracks = await client.get_playlist_items(playlist_id, offset=offset, limit=100)
+
+                        if not response_tracks.items:
+                            break
+
+                        tracks += [x['track'] for x in response_tracks.items]
+
+                        offset += response_tracks.limit
+
+                tracks_to_add = [track if track not in tracks else None]
+
+                if not tracks_to_add:
+                    continue
+
+                if playlist_created is False:
+                    description = config.GENRE_DEFAULT_PLAYLIST_DESCRIPTION or ''
+                    playlist = await client.create_playlist(
+                        config.GENRE_PLAYLIST_NAME.get(genre, config.GENRE_DEFAULT_PLAYLIST_NAME.format(genre.title())),
+                        description=config.GENRE_PLAYLIST_DESCRIPTION.get(
+                            genre, description.format(genre.title())
+                        ) or None,
+                        public=config.GENRE_PLAYLIST_PUBLIC.get(genre, config.GENRE_DEFAULT_PLAYLIST_PUBLIC),
+                    )
+                    playlist_id = playlist.id
+
+                await client.add_playlist_tracks(playlist_id, tracks_to_add)
+
+                print(f"[LOGS] Added tracks {track.name} to {playlist_id} ({genre}) with confidence of {confidence}")
+
+                await asyncio.sleep(1.5)
+
             # print(6)
 
-        for genre in genre_tracks:
-            if genre not in available_playlists:
-                playlist_created = False
-                # description = config.GENRE_DEFAULT_PLAYLIST_DESCRIPTION or ''
-                # playlist = await client.create_playlist(
-                #     config.GENRE_PLAYLIST_NAME.get(genre, config.GENRE_DEFAULT_PLAYLIST_NAME.format(genre.title())),
-                #     description=config.GENRE_PLAYLIST_DESCRIPTION.get(
-                #         genre, description.format(genre.title())
-                #     ) or None,
-                #     public=config.GENRE_PLAYLIST_PUBLIC.get(genre, config.GENRE_DEFAULT_PLAYLIST_PUBLIC),
-                # )
-                # playlist_id = playlist.id
-            else:
-                playlist_created = True
-                playlist_id = available_playlists[genre]['id']
-
-            # print(7)
-
-            offset = 0
-            tracks = []
-
-            if playlist_created is True:
-                while True:
-                    response_tracks = await client.get_playlist_items(playlist_id, offset=offset, limit=100)
-
-                    if not response_tracks.items:
-                        break
-
-                    tracks += [x['track'] for x in response_tracks.items]
-
-                    offset += response_tracks.limit
-
-            # print(8)
-
-            # print(tracks)
-
-            tracks_to_add = [x['track'] for x in genre_tracks[genre] if x['track'] not in tracks]
-
-            # print(tracks_to_add)
-
-            if not tracks_to_add:
-                continue
-
-            if playlist_created is False:
-                description = config.GENRE_DEFAULT_PLAYLIST_DESCRIPTION or ''
-                playlist = await client.create_playlist(
-                    config.GENRE_PLAYLIST_NAME.get(genre, config.GENRE_DEFAULT_PLAYLIST_NAME.format(genre.title())),
-                    description=config.GENRE_PLAYLIST_DESCRIPTION.get(
-                        genre, description.format(genre.title())
-                    ) or None,
-                    public=config.GENRE_PLAYLIST_PUBLIC.get(genre, config.GENRE_DEFAULT_PLAYLIST_PUBLIC),
-                )
-                playlist_id = playlist.id
-
-            # print(9)
-
-            await client.add_playlist_tracks(playlist_id, tracks_to_add)
-
-            print(f"[LOGS] Added tracks {tracks_to_add} to {playlist_id}")
-
-            # print(10)
-
-            await asyncio.sleep(1.5)
+        # for genre in genre_tracks:
+        #     if genre not in available_playlists:
+        #         playlist_created = False
+        #         # description = config.GENRE_DEFAULT_PLAYLIST_DESCRIPTION or ''
+        #         # playlist = await client.create_playlist(
+        #         #     config.GENRE_PLAYLIST_NAME.get(genre, config.GENRE_DEFAULT_PLAYLIST_NAME.format(genre.title())),
+        #         #     description=config.GENRE_PLAYLIST_DESCRIPTION.get(
+        #         #         genre, description.format(genre.title())
+        #         #     ) or None,
+        #         #     public=config.GENRE_PLAYLIST_PUBLIC.get(genre, config.GENRE_DEFAULT_PLAYLIST_PUBLIC),
+        #         # )
+        #         # playlist_id = playlist.id
+        #     else:
+        #         playlist_created = True
+        #         playlist_id = available_playlists[genre]['id']
+        #
+        #     # print(7)
+        #
+        #     offset = 0
+        #     tracks = []
+        #
+        #     if playlist_created is True:
+        #         while True:
+        #             response_tracks = await client.get_playlist_items(playlist_id, offset=offset, limit=100)
+        #
+        #             if not response_tracks.items:
+        #                 break
+        #
+        #             tracks += [x['track'] for x in response_tracks.items]
+        #
+        #             offset += response_tracks.limit
+        #
+        #     # print(8)
+        #
+        #     # print(tracks)
+        #
+        #     tracks_to_add = [x['track'] for x in genre_tracks[genre] if x['track'] not in tracks]
+        #
+        #     # print(tracks_to_add)
+        #
+        #     if not tracks_to_add:
+        #         continue
+        #
+        #     if playlist_created is False:
+        #         description = config.GENRE_DEFAULT_PLAYLIST_DESCRIPTION or ''
+        #         playlist = await client.create_playlist(
+        #             config.GENRE_PLAYLIST_NAME.get(genre, config.GENRE_DEFAULT_PLAYLIST_NAME.format(genre.title())),
+        #             description=config.GENRE_PLAYLIST_DESCRIPTION.get(
+        #                 genre, description.format(genre.title())
+        #             ) or None,
+        #             public=config.GENRE_PLAYLIST_PUBLIC.get(genre, config.GENRE_DEFAULT_PLAYLIST_PUBLIC),
+        #         )
+        #         playlist_id = playlist.id
+        #
+        #     # print(9)
+        #
+        #     await client.add_playlist_tracks(playlist_id, tracks_to_add)
+        #
+        #     print(f"[LOGS] Added tracks {tracks_to_add} to {playlist_id}")
+        #
+        #     # print(10)
+        #
+        #     await asyncio.sleep(1.5)
 
         tracks_before = original_tracks
 
