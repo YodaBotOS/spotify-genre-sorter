@@ -129,7 +129,7 @@ async def run_genre_classification(track: spotify.Track) -> dict[str, float]:
             with open(track_path, "wb") as fp:
                 fp.write(await resp.read())
 
-    genres = get_genre(track_path)
+    genres = get_genre([track_path])
 
     # "cd " + os.path.dirname(os.path.abspath(__file__)) + "music-genre-classification/src" + f" && python3
     # get_genre.py {track_path}"
