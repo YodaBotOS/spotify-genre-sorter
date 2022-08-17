@@ -6,7 +6,7 @@ set.pkl
 
 # Configs
 config.py
-!music-genre-classification/src/config.py
+!music_genre_classification/src/config.py
 
 # PyCharm stuff
 .idea
