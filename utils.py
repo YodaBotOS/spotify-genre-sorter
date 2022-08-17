@@ -275,7 +275,9 @@ async def check_new_tracks(client: spotify.Client, *, tracks_before: list[spotif
                     'confidence': confidence,
                 })
 
-                if genre not in (await get_available(client))[0]:
+                available_playlists, tracks_available = await get_available(client)
+
+                if genre not in available_playlists:
                     playlist_created = False
                 else:
                     playlist_created = True
