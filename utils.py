@@ -230,7 +230,7 @@ async def check_new_tracks(client: spotify.Client, *, tracks_before: list[spotif
             # print("debug yes")
 
             newline = '\n'
-            print(f"[LOGS] Removing tracks from {playlist} playlist: {f'{newline}'.join([track.name for track in to_be_removed])}")
+            print(f"[LOGS] Removing tracks from {playlist} playlist: {to_be_removed}")
             await client.remove_playlist_tracks(playlist, to_be_removed)
 
         # ----------------------------------------------------------------- #
@@ -275,7 +275,7 @@ async def check_new_tracks(client: spotify.Client, *, tracks_before: list[spotif
                     'confidence': confidence,
                 })
 
-                if genre not in await get_available(client)[0]:
+                if genre not in (await get_available(client))[0]:
                     playlist_created = False
                 else:
                     playlist_created = True
@@ -286,7 +286,7 @@ async def check_new_tracks(client: spotify.Client, *, tracks_before: list[spotif
 
                 if playlist_created is True:
                     while True:
-                        response_tracks = await client.get_playlist_items(playlist_id, offset=offset, limit=100)
+                        response_tracks = await client.get_playlist_items(playlist_id, offset=offset, limit=100) # type: ignore
 
                         if not response_tracks.items:
                             break
