@@ -4,9 +4,9 @@ This repo uses Python with the Spotify API and OAuth2 to generate a playlist of 
 # ⚠️ WARNING ⚠️
 This project is still a Work In Progress, which means there will be a lot of bugs and unexpected things.
 
-Feel free to experiment with this repo and [report any issues](https://github.com/OpenRobot/spotify-music-genre/issues) you find.
+Feel free to experiment with this repo and [report any issues](https://github.com/YodaBotOS/spotify-genre-sorter/issues) you find.
 
-[PRs](https://github.com/OpenRobot/spotify-music-genre/pulls) are always welcomed.
+[PRs](https://github.com/YodaBotOS/spotify-genre-sorter/pulls) are always welcomed.
 
 # Credits:
 This is taken from [GitHub (@cetinsamet/music-genre-classification)](https://github.com/cetinsamet/music-genre-classification)
